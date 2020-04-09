@@ -1,0 +1,55 @@
+﻿папка 
+functions:
+	node_modules
+	index.js
+	package-lock.json
+	package.json
+
+///*********///
+index.js
+
+const functions = require('firebase-functions');
+const admin = require('firebase-admin);
+admin.initializeApp()
+
+export.checkAlias = functions.https.onCall((data, context) => {
+	const ref = admin.firestore().collection('users').doc(data.slug);
+	return ref.get().then(doc => {
+		return {unique:  !doc.exists }
+	}).catch(err => {
+		throw new function.https.HttpsError('failed to connect)
+
+	});
+})
+
+///terminal
+firebase deploy --only functions
+//ми не маніпулюємо з базою даних на пряму, а лише викликаємо функцію,
+// що маніпулюватиме з базою даних
+
+
+//в файлі Signup.vue
+....
+import functions from 'firebase/functions';
+....
+let checkAlias = firebase.functions().httpsCallable('checkAlias');
+checkAlias({slug : this.slug}).then(result=> {
+	if(result.data.unique) {
+		this.feedback = "This alias is allready exists";
+	}	
+});
+
+
+// in firebase / database закладка rules
+//rules
+service cloud.firestore {
+	match /database/{database}/documents {
+		match /{document=**} {
+			allow: read;
+			allow : write if request.auth.uid != null
+		}
+	}
+}
+
+//в проеті шукаємо файл functions.rules  і вставляємо вище заданий скрипт
+
